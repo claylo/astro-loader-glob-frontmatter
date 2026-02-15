@@ -86,6 +86,12 @@ describe('extractH1', () => {
     const result = extractH1(md)
     expect(result).toEqual({ title: 'Title', body: 'Content.' })
   })
+
+  it('preserves # character in title text', () => {
+    const md = '# C# Programming Guide\n\nContent.'
+    const result = extractH1(md)
+    expect(result?.title).toBe('C# Programming Guide')
+  })
 })
 
 describe('stripH1Html', () => {

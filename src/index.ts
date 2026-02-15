@@ -91,14 +91,14 @@ export function globFrontmatter(opts: GlobFrontmatterOptions): Loader {
               const h1 = extractH1(entry.body)
               if (h1) {
                 entry.body = h1.body
-              }
-            }
-            if (entry.rendered) {
-              entry.rendered.html = stripH1Html(entry.rendered.html)
-              if (entry.rendered.metadata?.headings) {
-                const headings = entry.rendered.metadata.headings
-                if (headings.length > 0 && headings[0].depth === 1) {
-                  entry.rendered.metadata.headings = headings.slice(1)
+                if (entry.rendered) {
+                  entry.rendered.html = stripH1Html(entry.rendered.html)
+                  if (entry.rendered.metadata?.headings) {
+                    const headings = entry.rendered.metadata.headings
+                    if (headings.length > 0 && headings[0].depth === 1) {
+                      entry.rendered.metadata.headings = headings.slice(1)
+                    }
+                  }
                 }
               }
             }
