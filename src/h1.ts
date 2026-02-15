@@ -18,6 +18,12 @@ function flattenInlineMarkdown(text: string): string {
     .trim()
 }
 
+const H1_HTML_RE = /<h1[^>]*>[\s\S]*?<\/h1>\n*/
+
+export function stripH1Html(html: string): string {
+  return html.replace(H1_HTML_RE, '')
+}
+
 export function extractH1(markdown: string): { title: string; body: string } | null {
   const match = H1_RE.exec(markdown)
   if (!match) return null
