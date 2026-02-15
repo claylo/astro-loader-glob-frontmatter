@@ -13,6 +13,11 @@ vi.mock('astro/loaders', () => ({
         data: { title: 'File Accordion', draft: true },
         filePath: 'docs/components/accordion.md',
       })
+      await context.parseData({
+        id: 'components/with-h1',
+        data: { draft: true },
+        filePath: 'docs/components/with-h1.md',
+      })
     },
   })),
 }))
@@ -47,5 +52,30 @@ describe('central + per-dir + file integration', () => {
     expect(accordion.data.description).toBe('From central')         // only in central, inherited
     expect(accordion.data.draft).toBe(true)                         // only in file, preserved
     expect(accordion.data.sidebar).toEqual({ order: 2, badge: 'new' }) // perDir order wins over central, central badge inherited
+  })
+
+  it('H1 title fills in when frontmatter has no title, external frontmatter merges', async () => {
+    const captured: Array<{ id: string; data: Record<string, unknown> }> = []
+    const context = {
+      config: { root: rootUrl },
+      parseData: vi.fn(async (props: { id: string; data: Record<string, unknown> }) => {
+        captured.push({ id: props.id, data: props.data })
+        return props.data
+      }),
+      store: { set: vi.fn(() => true) },
+      watcher: undefined,
+    }
+
+    const loader = globFrontmatter({
+      pattern: '**/*.md',
+      base: './docs',
+      frontmatter: './frontmatter.yml',
+    })
+    await loader.load(context as never)
+
+    const entry = captured.find((e) => e.id === 'components/with-h1')!
+    // H1 becomes title (no title in file frontmatter or external frontmatter)
+    expect(entry.data.title).toBe('Accordion Widget')
+    expect(entry.data.draft).toBe(true)
   })
 })
