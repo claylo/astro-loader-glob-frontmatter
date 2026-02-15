@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractH1 } from '../src/h1.js'
+import { extractH1, stripH1Html } from '../src/h1.js'
 
 describe('extractH1', () => {
   it('extracts H1 and strips it from body', () => {
@@ -85,5 +85,37 @@ describe('extractH1', () => {
     const md = '   \n\t\n# Title\n\nContent.'
     const result = extractH1(md)
     expect(result).toEqual({ title: 'Title', body: 'Content.' })
+  })
+})
+
+describe('stripH1Html', () => {
+  it('removes first <h1> tag from HTML', () => {
+    const html = '<h1>My Title</h1>\n<p>Content.</p>'
+    expect(stripH1Html(html)).toBe('<p>Content.</p>')
+  })
+
+  it('only removes the first <h1>', () => {
+    const html = '<h1>First</h1>\n<h1>Second</h1>\n<p>Content.</p>'
+    expect(stripH1Html(html)).toBe('<h1>Second</h1>\n<p>Content.</p>')
+  })
+
+  it('handles <h1> with attributes', () => {
+    const html = '<h1 id="title" class="big">Title</h1>\n<p>Rest.</p>'
+    expect(stripH1Html(html)).toBe('<p>Rest.</p>')
+  })
+
+  it('handles <h1> with inline HTML elements', () => {
+    const html = '<h1>My <strong>Bold</strong> Title</h1>\n<p>Rest.</p>'
+    expect(stripH1Html(html)).toBe('<p>Rest.</p>')
+  })
+
+  it('returns HTML unchanged when no <h1> present', () => {
+    const html = '<h2>Subtitle</h2>\n<p>Content.</p>'
+    expect(stripH1Html(html)).toBe('<h2>Subtitle</h2>\n<p>Content.</p>')
+  })
+
+  it('strips trailing newline after removed <h1>', () => {
+    const html = '<h1>Title</h1>\n\n<p>Content.</p>'
+    expect(stripH1Html(html)).toBe('<p>Content.</p>')
   })
 })
