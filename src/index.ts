@@ -54,8 +54,8 @@ export function globFrontmatter(opts: GlobFrontmatterOptions): Loader {
               try {
                 const raw = readFileSync(resolve(rootDir, props.filePath), 'utf-8')
                 // Skip frontmatter fences to get body
-                const fenceEnd = raw.indexOf('---', raw.indexOf('---') + 3)
-                const body = fenceEnd !== -1 ? raw.slice(fenceEnd + 3) : raw
+                const fmMatch = /^---\n[\s\S]*?\n---\n?/.exec(raw)
+                const body = fmMatch ? raw.slice(fmMatch[0].length) : raw
                 const h1 = extractH1(body)
                 if (h1) {
                   merged.title = h1.title
