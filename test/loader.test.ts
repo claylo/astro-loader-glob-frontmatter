@@ -24,6 +24,18 @@ vi.mock('astro/loaders', () => ({
         data: { title: 'Standalone' },
         filePath: 'docs/standalone.md',
       })
+      // Entry with H1 in the file, no title in frontmatter data
+      await context.parseData({
+        id: 'guides/with-h1',
+        data: { draft: true },
+        filePath: 'docs/guides/with-h1.md',
+      })
+      // Entry with H1 in file AND title in frontmatter
+      await context.parseData({
+        id: 'guides/with-h1-and-title',
+        data: { title: 'Frontmatter Title', draft: true },
+        filePath: 'docs/guides/with-h1.md',
+      })
     },
   })),
 }))
@@ -112,7 +124,7 @@ describe('globFrontmatter', () => {
     const loader = globFrontmatter({ pattern: '**/*.md' })
     await loader.load(context as never)
 
-    expect(captured.length).toBe(3)
+    expect(captured.length).toBe(5)
   })
 
   it('passes generateId through to glob', async () => {
@@ -149,5 +161,24 @@ describe('globFrontmatter', () => {
     await loader.load(context as never)
 
     expect(captured).toEqual([{ id: 'no-filepath', data: { title: 'No Path' } }])
+  })
+
+  it('injects H1 as title when frontmatter has no title', async () => {
+    const { context, captured } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = captured.find((e) => e.id === 'guides/with-h1')!
+    expect(entry.data.title).toBe('Installation Guide')
+    expect(entry.data.draft).toBe(true)
+  })
+
+  it('frontmatter title wins over H1', async () => {
+    const { context, captured } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = captured.find((e) => e.id === 'guides/with-h1-and-title')!
+    expect(entry.data.title).toBe('Frontmatter Title')
   })
 })

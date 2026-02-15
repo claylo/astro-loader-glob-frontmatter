@@ -1,8 +1,10 @@
 import { glob } from 'astro/loaders'
 import type { Loader } from 'astro/loaders'
+import { readFileSync } from 'node:fs'
 import { normalize, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadFrontmatterMap, collectFrontmatterFilePaths } from './frontmatter-map.js'
+import { extractH1 } from './h1.js'
 import { deepMerge } from './merge.js'
 
 type GlobOpts = Parameters<typeof glob>[0]
@@ -46,6 +48,22 @@ export function globFrontmatter(opts: GlobFrontmatterOptions): Loader {
             const externalData = fmMap.get(relPath) ?? {}
 
             const merged = deepMerge(externalData, props.data as Record<string, unknown>)
+
+            // Extract H1 from file body as title if not already set
+            if (!merged.title) {
+              try {
+                const raw = readFileSync(resolve(rootDir, props.filePath), 'utf-8')
+                // Skip frontmatter fences to get body
+                const fenceEnd = raw.indexOf('---', raw.indexOf('---') + 3)
+                const body = fenceEnd !== -1 ? raw.slice(fenceEnd + 3) : raw
+                const h1 = extractH1(body)
+                if (h1) {
+                  merged.title = h1.title
+                }
+              } catch {
+                // File read failed — skip H1 extraction
+              }
+            }
 
             return originalParseData({ ...props, data: merged as TData })
           },
