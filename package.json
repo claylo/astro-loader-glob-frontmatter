@@ -1,6 +1,6 @@
 {
   "name": "astro-loader-glob-frontmatter",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "Astro content loader that injects frontmatter from external YAML/JSON files",
   "license": "MIT",
