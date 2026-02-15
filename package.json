@@ -1,0 +1,42 @@
+{
+  "name": "astro-loader-glob-frontmatter",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Astro content loader that injects frontmatter from external YAML/JSON files",
+  "license": "MIT",
+  "author": "Clay Loveless",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/claylo/astro-loader-glob-frontmatter.git"
+  },
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "tsc"
+  },
+  "peerDependencies": {
+    "astro": ">=5.0.0"
+  },
+  "dependencies": {
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "@vitest/coverage-v8": "^4.0.18",
+    "astro": "^5.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.0.18"
+  }
+}

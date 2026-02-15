@@ -1,0 +1,6 @@
+{
+  "installation.md": {
+    "title": "Installation",
+    "sidebar": { "order": 1 }
+  }
+}

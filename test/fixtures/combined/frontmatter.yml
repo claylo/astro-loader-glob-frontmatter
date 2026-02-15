@@ -1,0 +1,7 @@
+components:
+  accordion.md:
+    title: Central Accordion
+    description: From central
+    sidebar:
+      order: 10
+      badge: new
