@@ -4,7 +4,7 @@
  *
  * Capture group 1 = raw heading text (may contain inline markdown).
  */
-const H1_RE = /^(?:\s*\n)*# (.+)\n?/
+const H1_RE = /^(?:[^\S\n]*\n)*# (.+)\n?/
 
 /** Strip bold, italic, code, images, and links down to plain text. */
 function flattenInlineMarkdown(text: string): string {

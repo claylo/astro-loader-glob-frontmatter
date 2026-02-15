@@ -68,6 +68,18 @@ vi.mock('astro/loaders', () => ({
         id: 'no-body',
         data: { title: 'No Body' },
       })
+      // Entry where H1 is NOT the first content (buried in body)
+      context.store.set({
+        id: 'buried-h1',
+        data: { title: 'Has Buried H1' },
+        body: 'Some intro text.\n\n# Buried Heading\n\nMore content.',
+        rendered: {
+          html: '<p>Some intro text.</p>\n<h1>Buried Heading</h1>\n<p>More content.</p>',
+          metadata: {
+            headings: [{ depth: 1, slug: 'buried-heading', text: 'Buried Heading' }],
+          },
+        },
+      })
     },
   })),
 }))
@@ -270,5 +282,19 @@ describe('globFrontmatter', () => {
 
     const entry = stored.find((e) => e.id === 'no-body') as Record<string, unknown>
     expect(entry.body).toBeUndefined()
+  })
+
+  it('does not strip H1 from rendered HTML when H1 is not first content', async () => {
+    const { context, stored } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = stored.find((e) => e.id === 'buried-h1') as Record<string, unknown>
+    expect(entry.body).toBe('Some intro text.\n\n# Buried Heading\n\nMore content.')
+    const rendered = entry.rendered as { html: string; metadata: { headings: Array<{ depth: number }> } }
+    expect(rendered.html).toBe('<p>Some intro text.</p>\n<h1>Buried Heading</h1>\n<p>More content.</p>')
+    expect(rendered.metadata.headings).toEqual([
+      { depth: 1, slug: 'buried-heading', text: 'Buried Heading' },
+    ])
   })
 })
