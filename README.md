@@ -111,14 +111,14 @@ No config flag needed. If the file exists, it's used. If you don't want per-dire
 
 ## Merge Cascade
 
-Three layers, from broadest to most specific:
+Four layers, from broadest to most specific:
 
 ```
-centralized file  →  per-directory file  →  in-file frontmatter
-   (broadest)        (directory-scoped)       (most specific)
+centralized file  →  per-directory file  →  H1 title  →  in-file frontmatter
+   (broadest)        (directory-scoped)     (from body)    (most specific)
 ```
 
-**In-file frontmatter always wins.** If a key exists in the markdown file's frontmatter, that value is used. Per-directory files fill in gaps and override the centralized file. The centralized file provides defaults for everything else.
+**In-file frontmatter always wins.** If a key exists in the markdown file's frontmatter, that value is used. The H1 title sits between external frontmatter and in-file frontmatter—it fills in the `title` field when external files don't provide one, but in-file `title` still takes precedence. Per-directory files fill in gaps and override the centralized file. The centralized file provides defaults for everything else.
 
 For nested objects, merging is deep. If your centralized file sets `sidebar.badge: new` and the per-directory file sets `sidebar.order: 2`, the result is `sidebar: { order: 2, badge: new }`—not a wholesale replacement.
 
@@ -165,6 +165,29 @@ sidebar:
   order: 2                    # per-dir wins over central
   badge: new                  # central, inherited via deep merge
 ```
+
+## Title from H1
+
+The loader automatically extracts the first `# Heading` from your markdown content and uses it as the `title` field. This means you can write natural markdown that looks good on GitHub:
+
+```markdown
+---
+sidebar:
+  order: 3
+---
+
+# Accordion
+
+The accordion component expands and collapses content.
+```
+
+The `# Accordion` heading becomes `title: "Accordion"` in your frontmatter data, and is stripped from the rendered body to prevent duplication.
+
+**Rules:**
+- The H1 must be the first non-blank content after frontmatter
+- If frontmatter already has a `title` field, the in-file title wins (H1 is still stripped from the body)
+- Inline markdown in the heading (`# My **Bold** Title`) is flattened to plain text
+- Only the first H1 is extracted — subsequent H1s are left in the body
 
 ## Dev Mode
 
