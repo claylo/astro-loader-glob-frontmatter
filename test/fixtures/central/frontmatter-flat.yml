@@ -1,0 +1,9 @@
+guides/installation.md:
+  title: Installation
+  sidebar:
+    order: 1
+guides/getting-started.md:
+  title: Getting Started
+components/README.md:
+  title: Overview
+  slug: components
