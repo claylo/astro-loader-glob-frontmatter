@@ -8,6 +8,7 @@ vi.mock('astro/loaders', () => ({
     name: 'glob',
     load: async (context: {
       parseData: (props: { id: string; data: Record<string, unknown>; filePath?: string }) => Promise<unknown>
+      store: { set: (entry: Record<string, unknown>) => boolean }
     }) => {
       await context.parseData({
         id: 'guides/installation',
@@ -36,6 +37,37 @@ vi.mock('astro/loaders', () => ({
         data: { title: 'Frontmatter Title', draft: true },
         filePath: 'docs/guides/with-h1.md',
       })
+
+      // Simulate store.set calls with body and rendered content
+      context.store.set({
+        id: 'guides/with-h1',
+        data: { draft: true },
+        body: '# Installation Guide\n\nFollow these steps to install.',
+        rendered: {
+          html: '<h1>Installation Guide</h1>\n<p>Follow these steps to install.</p>',
+          metadata: {
+            headings: [
+              { depth: 1, slug: 'installation-guide', text: 'Installation Guide' },
+              { depth: 2, slug: 'step-one', text: 'Step One' },
+            ],
+          },
+        },
+      })
+      context.store.set({
+        id: 'no-h1',
+        data: { title: 'No H1' },
+        body: '## Just a subtitle\n\nContent.',
+        rendered: {
+          html: '<h2>Just a subtitle</h2>\n<p>Content.</p>',
+          metadata: {
+            headings: [{ depth: 2, slug: 'just-a-subtitle', text: 'Just a subtitle' }],
+          },
+        },
+      })
+      context.store.set({
+        id: 'no-body',
+        data: { title: 'No Body' },
+      })
     },
   })),
 }))
@@ -47,14 +79,22 @@ const rootUrl = pathToFileURL(rootDir + '/')
 
 function makeMockContext() {
   const captured: Array<{ id: string; data: Record<string, unknown> }> = []
+  const stored: Array<Record<string, unknown>> = []
   return {
     captured,
+    stored,
     context: {
       config: { root: rootUrl },
       parseData: vi.fn(async (props: { id: string; data: Record<string, unknown> }) => {
         captured.push({ id: props.id, data: props.data })
         return props.data
       }),
+      store: {
+        set: vi.fn((entry: Record<string, unknown>) => {
+          stored.push(entry)
+          return true
+        }),
+      },
       watcher: undefined,
     },
   }
@@ -110,6 +150,7 @@ describe('globFrontmatter', () => {
     const context = {
       config: { root: emptyRootUrl },
       parseData: vi.fn(async (props: { id: string; data: Record<string, unknown> }) => props.data),
+      store: { set: vi.fn(() => true) },
       watcher: mockWatcher,
     }
 
@@ -180,5 +221,54 @@ describe('globFrontmatter', () => {
 
     const entry = captured.find((e) => e.id === 'guides/with-h1-and-title')!
     expect(entry.data.title).toBe('Frontmatter Title')
+  })
+
+  it('strips H1 from body in store.set', async () => {
+    const { context, stored } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = stored.find((e) => e.id === 'guides/with-h1') as Record<string, unknown>
+    expect(entry.body).toBe('Follow these steps to install.')
+  })
+
+  it('strips <h1> from rendered HTML in store.set', async () => {
+    const { context, stored } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = stored.find((e) => e.id === 'guides/with-h1') as Record<string, unknown>
+    const rendered = entry.rendered as { html: string }
+    expect(rendered.html).toBe('<p>Follow these steps to install.</p>')
+  })
+
+  it('filters depth-1 heading from rendered metadata', async () => {
+    const { context, stored } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = stored.find((e) => e.id === 'guides/with-h1') as Record<string, unknown>
+    const rendered = entry.rendered as { metadata: { headings: Array<{ depth: number }> } }
+    expect(rendered.metadata.headings).toEqual([
+      { depth: 2, slug: 'step-one', text: 'Step One' },
+    ])
+  })
+
+  it('does not modify body when no H1 present', async () => {
+    const { context, stored } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = stored.find((e) => e.id === 'no-h1') as Record<string, unknown>
+    expect(entry.body).toBe('## Just a subtitle\n\nContent.')
+  })
+
+  it('handles entries with no body (retainBody: false)', async () => {
+    const { context, stored } = makeMockContext()
+    const loader = globFrontmatter({ pattern: '**/*.md', base: './docs' })
+    await loader.load(context as never)
+
+    const entry = stored.find((e) => e.id === 'no-body') as Record<string, unknown>
+    expect(entry.body).toBeUndefined()
   })
 })

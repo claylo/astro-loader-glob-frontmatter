@@ -31,6 +31,7 @@ describe('central + per-dir + file integration', () => {
         captured.push({ id: props.id, data: props.data })
         return props.data
       }),
+      store: { set: vi.fn(() => true) },
       watcher: undefined,
     }
 
