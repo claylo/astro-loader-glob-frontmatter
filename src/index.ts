@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { normalize, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadFrontmatterMap, collectFrontmatterFilePaths } from './frontmatter-map.js'
-import { extractH1 } from './h1.js'
+import { extractH1, stripH1Html } from './h1.js'
 import { deepMerge } from './merge.js'
 
 type GlobOpts = Parameters<typeof glob>[0]
@@ -66,6 +66,43 @@ export function globFrontmatter(opts: GlobFrontmatterOptions): Loader {
             }
 
             return originalParseData({ ...props, data: merged as TData })
+          },
+        },
+      })
+
+      // Wrap store.set to strip H1 from body and rendered HTML
+      const originalSet = context.store.set.bind(context.store)
+      wrappedContext.store = Object.create(context.store, {
+        set: {
+          value: <TData extends Record<string, unknown>>(entry: {
+            id: string
+            data: TData
+            body?: string
+            rendered?: {
+              html: string
+              metadata?: {
+                headings?: Array<{ depth: number; slug: string; text: string }>
+                [key: string]: unknown
+              }
+            }
+            [key: string]: unknown
+          }) => {
+            if (entry.body) {
+              const h1 = extractH1(entry.body)
+              if (h1) {
+                entry.body = h1.body
+              }
+            }
+            if (entry.rendered) {
+              entry.rendered.html = stripH1Html(entry.rendered.html)
+              if (entry.rendered.metadata?.headings) {
+                const headings = entry.rendered.metadata.headings
+                if (headings.length > 0 && headings[0].depth === 1) {
+                  entry.rendered.metadata.headings = headings.slice(1)
+                }
+              }
+            }
+            return originalSet(entry)
           },
         },
       })
